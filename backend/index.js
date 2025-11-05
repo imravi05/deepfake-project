@@ -22,7 +22,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // --- 4. Define Routes ---
 // All routes starting with /api/submissions will be handled by this file
 app.use('/api/submissions', require('./routes/Submission'));
-
+app.use('/api/stats', require('./routes/stats'));
 // Root endpoint to check if server is running
 app.get('/', (req, res) => {
   res.send('Deepfake Node.js Backend is Running!');

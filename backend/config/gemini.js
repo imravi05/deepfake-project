@@ -18,17 +18,23 @@ async function generateGeminiReport(prediction, confidence) {
 
     // Craft a specific prompt for our non-technical user
     const confidencePercent = Math.round(confidence * 100);
+    // A more structured prompt
     const prompt = `
-      You are an AI assistant explaining a cybersecurity analysis to a non-technical manager.
-      My deepfake detection model analyzed a file and its verdict is:
+      You are an AI-powered media forensics assistant.
+      A file was analyzed with the following results:
+      - Prediction: ${prediction.toUpperCase()}
+      - Confidence Score: ${confidencePercent}%
 
-      - Prediction: ${prediction}
-      - Confidence: ${confidencePercent}%
+      Please generate a report for a non-technical user with the following sections:
 
-      Please write a simple, one-paragraph report (about 3-4 sentences) that explains what this means in plain English.
-      If it's 'fake', briefly mention the risks.
-      If it's 'real', briefly state that the media appears authentic.
-      Do not use technical jargon.
+      **Analysis Summary:**
+      [Explain what the verdict means in one sentence.]
+
+      **Potential Risks:**
+      [If 'fake', briefly describe risks like misinformation or fraud. If 'real', state that no manipulation was detected.]
+
+      **Next Steps:**
+      [Provide a clear action item. e.g., "This file should be handled with extreme caution." or "This file appears authentic based on our analysis."]
     `;
 
     const result = await model.generateContent(prompt);

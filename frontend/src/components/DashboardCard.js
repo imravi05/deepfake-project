@@ -1,30 +1,39 @@
+// File: frontend/src/components/DashboardCard.js
+
 import React from "react";
 
-function DashboardCards() {
+// Accept 'stats' as a prop from App.js
+function DashboardCards({ stats }) {
+  // Show a loading state until stats are fetched
+  if (!stats) {
+    return <div className="dashboard-cards">Loading stats...</div>;
+  }
+
+  // Use the real data from the backend
   const cards = [
     {
       title: "Total Analyses",
       icon: "fa-chart-line",
-      value: "1,248",
-      text: "+12% from last month",
+      value: stats.totalAnalyses,
+      text: "Total files processed",
     },
     {
       title: "Deepfake Detected",
       icon: "fa-exclamation-triangle",
-      value: "327",
-      text: "26% of total analyses",
+      value: stats.deepfakeDetected,
+      text: "Files identified as fake",
     },
     {
       title: "Accuracy Rate",
       icon: "fa-target",
-      value: "94.7%",
+      value: stats.accuracyRate,
       text: "Based on test data",
     },
     {
       title: "Avg. Processing Time",
       icon: "fa-clock",
-      value: "3.2s",
-      text: "Per image analysis",
+      value: stats.avgProcessingTime,
+      text: "Per file analysis",
     },
   ];
 

@@ -41,6 +41,7 @@ async def predict(file: UploadFile = File(...)):
     print(f"Analyzing file: {file.filename}...")
     try:
       result = pipe(image)
+      print(f"MODEL_RAW_OUTPUT: {result}")
       print(f"Analysis complete. Result: {result}")
       
       # The model returns a list of dictionaries, like:

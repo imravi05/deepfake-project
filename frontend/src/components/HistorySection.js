@@ -1,44 +1,9 @@
+// File: frontend/src/components/HistorySection.js
+
 import React from "react";
 
-function HistorySection() {
-  const historyData = [
-    {
-      date: "Jun 12, 2023 14:32",
-      fileName: "interview_video.mp4",
-      type: "Video",
-      result: "Real",
-      confidence: "92%",
-    },
-    {
-      date: "Jun 11, 2023 09:15",
-      fileName: "news_clip.mp3",
-      type: "Audio",
-      result: "Fake",
-      confidence: "87%",
-    },
-    {
-      date: "Jun 10, 2023 16:48",
-      fileName: "profile_image.jpg",
-      type: "Image",
-      result: "Real",
-      confidence: "95%",
-    },
-    {
-      date: "Jun 9, 2023 11:27",
-      fileName: "political_speech.mp4",
-      type: "Video",
-      result: "Fake",
-      confidence: "78%",
-    },
-    {
-      date: "Jun 8, 2023 13:52",
-      fileName: "podcast_segment.wav",
-      type: "Audio",
-      result: "Real",
-      confidence: "89%",
-    },
-  ];
-
+// Accept 'history' as a prop from App.js
+function HistorySection({ history }) {
   return (
     <div className="history-section">
       <h3 className="section-title">Recent Analysis History</h3>
@@ -54,23 +19,31 @@ function HistorySection() {
           </tr>
         </thead>
         <tbody>
-          {historyData.map((item, index) => (
-            <tr key={index}>
-              <td>{item.date}</td>
-              <td>{item.fileName}</td>
-              <td>{item.type}</td>
-              <td>
-                <span
-                  className={`status-badge ${
-                    item.result.toLowerCase() === "real" ? "real" : "fake"
-                  }`}
-                >
-                  {item.result}
-                </span>
-              </td>
-              <td>{item.confidence}</td>
+          {/* Check if history is empty */}
+          {history.length === 0 ? (
+            <tr>
+              <td colSpan="5">No analysis history found.</td>
             </tr>
-          ))}
+          ) : (
+            // Map over the 'history' prop
+            history.map((item) => (
+              <tr key={item._id}>
+                <td>{new Date(item.createdAt).toLocaleString()}</td>
+                <td>{item.fileName}</td>
+                <td>{item.fileType}</td>
+                <td>
+                  <span
+                    className={`status-badge ${
+                      item.prediction === "real" ? "real" : "fake"
+                    }`}
+                  >
+                    {item.prediction}
+                  </span>
+                </td>
+                <td>{Math.round(item.confidence * 100)}%</td>
+              </tr>
+            ))
+          )}
         </tbody>
       </table>
     </div>

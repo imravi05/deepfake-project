@@ -10,6 +10,27 @@ function ResultsSection({ analysis }) {
     return null; 
   }
 
+  // --- NEW: Download Function ---
+  const handleDownload = () => {
+    // 1. Get the text content
+    const reportText = analysis.geminiReport;
+    
+    // 2. Create a "blob" (a file in memory)
+    const blob = new Blob([reportText], { type: 'text/plain' });
+    
+    // 3. Create a fake download link
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `deepfake_report_${analysis._id}.txt`; // Set the file name
+    
+    // 4. Click the link and then remove it
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   // We got a result! Display it.
   const confidencePercent = Math.round(analysis.confidence * 100);
   const mediaPath = analysis.filePath.replace(/\\/g, '/');
@@ -51,7 +72,8 @@ function ResultsSection({ analysis }) {
             ))}
           </ul>
 
-          <button className="btn" style={{ marginTop: '15px' }}>
+          {/* FIX: Added the onClick handler to the button */}
+          <button className="btn" style={{ marginTop: '15px' }} onClick={handleDownload}>
             <i className="fas fa-download"></i> Download Full Report
           </button>
         </div>
