@@ -5,70 +5,75 @@ from transformers import pipeline
 from PIL import Image
 import io
 
-# 1. Initialize our FastAPI application
 app = FastAPI(title="Deepfake Detection ML API")
 
-# 2. Load the AI model
-# This will download the model (prithivMLmods/Deep-Fake-Detector-v2-Model)
-# the first time it's run.
+# --- CONFIGURATION ---
+# Set this to True if your model is predicting Real as Fake and vice-versa.
+INVERT_PREDICTION = True 
+# ---------------------
+
 print("Loading AI model...")
-# We specify device=0 to use the GPU if available (much faster)
-# If no GPU, change it to device=-1 to use the CPU
 try:
-  pipe = pipeline("image-classification", model="prithivMLmods/Deep-Fake-Detector-v2-Model", device=0)
-  print("Model loaded on GPU.")
+    # We stick with the robust model we chose
+    pipe = pipeline("image-classification", model="umm-maybe/AI-image-detector", device=0)
+    print("Model loaded on GPU.")
 except Exception:
-  print("Failed to load on GPU, falling back to CPU.")
-  pipe = pipeline("image-classification", model="prithivMLmods/Deep-Fake-Detector-v2-Model", device=-1)
-  print("Model loaded on CPU.")
+    print("Failed to load on GPU, falling back to CPU.")
+    pipe = pipeline("image-classification", model="umm-maybe/AI-image-detector", device=-1)
+    print("Model loaded on CPU.")
 
 
-# 3. Define the main prediction endpoint
 @app.post("/predict")
 async def predict(file: UploadFile = File(...)):
-    """
-    This endpoint takes an uploaded file, runs it through the
-    deepfake detection model, and returns the result.
-    """
-    
-    # 4. Read the uploaded file into an image
-    # We use io.BytesIO to read the file in memory without saving it
     contents = await file.read()
     image = Image.open(io.BytesIO(contents))
     
-    # 5. Run the prediction
-    # The 'pipe' function runs the image through the model
     print(f"Analyzing file: {file.filename}...")
     try:
-      result = pipe(image)
-      print(f"MODEL_RAW_OUTPUT: {result}")
-      print(f"Analysis complete. Result: {result}")
-      
-      # The model returns a list of dictionaries, like:
-      # [{'label': 'Deepfake', 'score': 0.92}] or [{'label': 'Realism', 'score': 0.88}]
-      
-      # 6. Format the result to match our Node.js backend's needs
-      best_prediction = result[0]
-      prediction_label = "fake" if best_prediction["label"] == "Deepfake" else "real"
-      confidence_score = best_prediction["score"]
+        result = pipe(image)
+        print(f"MODEL_RAW_OUTPUT: {result}") 
+        
+        # Get the top result
+        top_result = result[0]
+        raw_label = top_result['label'].lower() 
+        raw_score = top_result['score']
+        
+        # Determine initial prediction based on label text
+        # (This model typically uses 'artificial' for fake)
+        if "artificial" in raw_label or "ai" in raw_label or "fake" in raw_label:
+            prediction = "fake"
+        else:
+            prediction = "real"
 
-      # See the "Important Note" below
-      artifacts = [
-          f"Model is {confidence_score * 100:.1f}% confident this is {prediction_label}."
-      ]
+        # --- APPLY THE INVERSION FIX ---
+        if INVERT_PREDICTION:
+            # Swap the prediction
+            if prediction == "fake":
+                prediction = "real"
+            else:
+                prediction = "fake"
+            print(f"NOTE: Prediction inverted to '{prediction}' due to configuration.")
 
-      return {
-          "prediction": prediction_label,
-          "confidence": confidence_score,
-          "artifacts_detected": artifacts
-      }
+        # Prepare the reasoning text
+        if prediction == "fake":
+            reason = f"Model detects high likelihood of AI generation ({raw_score*100:.1f}%)."
+        else:
+            reason = f"Model classifies this as authentic/real media ({raw_score*100:.1f}%)."
+
+        return {
+            "prediction": prediction,
+            "confidence": raw_score,
+            "artifacts_detected": [
+                reason,
+                f"Raw Label: {raw_label}",
+                f"Inverted: {INVERT_PREDICTION}"
+            ]
+        }
 
     except Exception as e:
         print(f"Error during prediction: {e}")
         return {"error": "Failed to process image.", "details": str(e)}
 
-
-# 4. A simple root endpoint to check if the server is running
 @app.get("/")
 def read_root():
-    return {"message": "Welcome to the REAL Deepfake ML Server"}
+    return {"message": "Deepfake ML Server is running"}
