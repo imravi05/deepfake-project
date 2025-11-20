@@ -1,4 +1,4 @@
-// File: backend-node/config/gemini.js
+// File: backend/config/gemini.js
 
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
@@ -6,35 +6,40 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 /**
- * Generates a non-technical report using the Gemini API.
- * @param {string} prediction - The model's prediction ("real" or "fake").
- * @param {number} confidence - The model's confidence score (e.g., 0.92).
- * @returns {Promise<string>} - The AI-generated report.
+ * Generates a professional cybersecurity report using the Gemini 2.5 Flash-Lite model.
+ * @param {string} prediction - "real" or "fake"
+ * @param {number} confidence - 0.0 to 1.0
+ * @param {Array<string>} artifacts - List of technical details from the ML model
  */
-async function generateGeminiReport(prediction, confidence) {
+async function generateGeminiReport(prediction, confidence, artifacts) {
   try {
-    // Get the generative model
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    // --- FIX: Use "gemini-2.5-flash-lite" (Stable & Fast) ---
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
 
-    // Craft a specific prompt for our non-technical user
     const confidencePercent = Math.round(confidence * 100);
-    // A more structured prompt
+    
+    // Format the artifacts into a readable list
+    const artifactList = artifacts && artifacts.length > 0
+      ? artifacts.map(item => `- ${item}`).join('\n')
+      : "- No specific technical artifacts reported.";
+
     const prompt = `
-      You are an AI-powered media forensics assistant.
-      A file was analyzed with the following results:
-      - Prediction: ${prediction.toUpperCase()}
-      - Confidence Score: ${confidencePercent}%
+      You are a Senior Cybersecurity Analyst. Write a formal analysis report for a client regarding a media file they submitted for Deepfake Detection.
 
-      Please generate a report for a non-technical user with the following sections:
+      **Analysis Data:**
+      - **Verdict:** ${prediction.toUpperCase()}
+      - **Confidence Score:** ${confidencePercent}%
+      - **Technical Indicators:**
+      ${artifactList}
 
-      **Analysis Summary:**
-      [Explain what the verdict means in one sentence.]
+      **Instructions:**
+      Please write a concise, 3-part report. Do not use markdown headers like "##", just use bold text for labels.
 
-      **Potential Risks:**
-      [If 'fake', briefly describe risks like misinformation or fraud. If 'real', state that no manipulation was detected.]
+      1. **Executive Summary:** Explain clearly whether the file is considered authentic or manipulated.
+      2. **Technical Analysis:** Briefly explain the "Technical Indicators" listed above in simple terms. If the confidence is high, explain that strong evidence was found. If low (or inverted), mention the ambiguity.
+      3. **Security Recommendation:** Tell the user what to do next. (e.g., "Verify source manually", "Discard immediately", "Safe to use").
 
-      **Next Steps:**
-      [Provide a clear action item. e.g., "This file should be handled with extreme caution." or "This file appears authentic based on our analysis."]
+      Tone: Professional, Objective, and Cautious.
     `;
 
     const result = await model.generateContent(prompt);
@@ -43,8 +48,8 @@ async function generateGeminiReport(prediction, confidence) {
 
   } catch (error) {
     console.error("Error generating Gemini report:", error);
-    // Fallback to a simple message if the API fails
-    return "Failed to generate AI report. Please check the model's prediction and confidence score.";
+    // Fallback message if API fails
+    return `Analysis Complete. Verdict: ${prediction.toUpperCase()} (${Math.round(confidence * 100)}%). (AI Report Unavailable).`;
   }
 }
 

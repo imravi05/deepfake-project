@@ -27,11 +27,11 @@ function UploadSection({ onFileSelect, onAnalyzeClick, isLoading, error }) {
         ref={inputRef}
         onChange={handleFileChange}
         style={{ display: 'none' }}
-        accept="image/*,video/*,audio/*"
+        accept="image/*,video/*"
       />
 
       <h3 className="upload-title">Analyze Suspected Media</h3>
-      <p>Upload images, audio, or video files for deepfake detection</p>
+      <p>Upload images,video files for deepfake detection</p>
 
       {/* This div is now a button to open the file dialog */}
       <div className="upload-area" onClick={handleAreaClick}>
@@ -41,7 +41,7 @@ function UploadSection({ onFileSelect, onAnalyzeClick, isLoading, error }) {
         <div className="upload-text">
           <p>Drag & drop files here or click to browse</p>
           <p className="card-text">
-            Supported formats: JPG, PNG, MP3, WAV, MP4, MOV (Max 100MB)
+            Supported formats: JPG, PNG, MP3 (Max 100MB)
           </p>
         </div>
         <button className="btn">Select Files</button>

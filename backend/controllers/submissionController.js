@@ -13,37 +13,52 @@ async function processFile(submission) {
   try {
     // --- Part A: Call Python ML API ---
     console.log(`[${submission._id}] Sending to Python API...`);
+    
     const form = new FormData();
+    // Ensure file exists before reading
+    if (!fs.existsSync(submission.filePath)) {
+       throw new Error(`File not found at path: ${submission.filePath}`);
+    }
     form.append('file', fs.createReadStream(submission.filePath));
 
+    // Send to Python server with correct headers for form-data
     const mlResponse = await axios.post(
       `${process.env.PYTHON_API_URL}/predict`,
       form,
-      { headers: form.getHeaders() }
+      { headers: form.getHeaders() } 
     );
 
     const { prediction, confidence, artifacts_detected } = mlResponse.data;
 
+    // Update submission with ML results
     submission.prediction = prediction;
     submission.confidence = confidence;
     submission.modelArtifacts = artifacts_detected;
     await submission.save();
     console.log(`[${submission._id}] Received from Python: ${prediction}`);
 
+
     // --- Part B: Call REAL Gemini API ---
     console.log(`[${submission._id}] Generating Gemini report...`);
 
+    // Pass artifacts to Gemini for a detailed report
     const geminiReport = await generateGeminiReport(
-      submission.prediction,
-      submission.confidence
+      submission.prediction, 
+      submission.confidence,
+      submission.modelArtifacts 
     );
 
+    // Update submission with the final report and 'completed' status
     submission.geminiReport = geminiReport;
     submission.status = 'completed';
     await submission.save();
     console.log(`[${submission._id}] Process complete.`);
+
   } catch (error) {
+    // --- Error Handling (This was missing in your snippet) ---
     console.error(`[${submission._id}] Error during processing:`, error.message);
+    
+    // Update DB to show failure so the frontend stops polling
     submission.status = 'failed';
     submission.geminiReport = 'Analysis failed. Please try again.';
     await submission.save();
@@ -62,12 +77,12 @@ exports.uploadFile = async (req, res) => {
   }
 
   try {
-    // Determine file type
+    // Determine file type based on mimetype
     let fileType = 'image';
     if (req.file.mimetype.startsWith('video')) fileType = 'video';
     if (req.file.mimetype.startsWith('audio')) fileType = 'audio';
     
-    // This line will now work because 'Submission' is the model
+    // Create new Submission document
     const newSubmission = new Submission({
       fileName: req.file.originalname,
       filePath: req.file.path,
@@ -77,10 +92,10 @@ exports.uploadFile = async (req, res) => {
     await newSubmission.save();
     console.log(`[${newSubmission._id}] New submission created for ${newSubmission.fileName}`);
 
-    // Start processing in the background (no 'await')
+    // Start processing in the background (no 'await' here so response is fast)
     processFile(newSubmission);
 
-    // Send immediate response
+    // Send immediate response to frontend
     res.status(201).json({
       message: 'File uploaded. Processing started.',
       submissionId: newSubmission._id
@@ -98,7 +113,6 @@ exports.uploadFile = async (req, res) => {
  */
 exports.getSubmissionStatus = async (req, res) => {
   try {
-    // FIX 2: Use the model 'Submission' (capital S), not the variable 'submission'
     const submission = await Submission.findById(req.params.id);
     if (!submission) {
       return res.status(404).json({ msg: 'Submission not found' });
@@ -116,7 +130,6 @@ exports.getSubmissionStatus = async (req, res) => {
  */
 exports.getAllSubmissions = async (req, res) => {
   try {
-    // FIX 3: Use the model 'Submission' (capital S)
     const submissions = await Submission.find().sort({ createdAt: -1 });
     res.json(submissions);
   } catch (err) {

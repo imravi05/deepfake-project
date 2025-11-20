@@ -9,7 +9,7 @@ app = FastAPI(title="Deepfake Detection ML API")
 
 # --- CONFIGURATION ---
 # Set this to True if your model is predicting Real as Fake and vice-versa.
-INVERT_PREDICTION = True 
+INVERT_PREDICTION = True
 # ---------------------
 
 print("Loading AI model...")
